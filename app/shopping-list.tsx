@@ -36,12 +36,21 @@ export default function ShoppingListScreen() {
       addItem(newItem.trim());
       setNewItem('');
       setShowSuggestions(false);
+      
+      // Show feedback
+      Alert.alert('Success', 'Item added to shopping list!');
     }
   };
   
   const handleSelectSuggestion = (suggestion: string) => {
     setNewItem(suggestion);
     setShowSuggestions(false);
+    // Auto-add the item after selection
+    addItem(suggestion);
+    setNewItem('');
+    
+    // Show feedback
+    Alert.alert('Success', 'Item added to shopping list!');
   };
   
   const handleSaveList = () => {
@@ -71,7 +80,10 @@ export default function ShoppingListScreen() {
       
       <TouchableOpacity 
         style={styles.deleteButton}
-        onPress={() => removeItem(item.id)}
+        onPress={() => {
+          removeItem(item.id);
+          Alert.alert('Success', 'Item removed from shopping list!');
+        }}
       >
         <X size={20} color={colors.error} />
       </TouchableOpacity>
@@ -130,8 +142,15 @@ export default function ShoppingListScreen() {
             )}
           </View>
           
-          <TouchableOpacity style={styles.addButton} onPress={handleAddItem}>
-            <Plus size={24} color={colors.white} />
+          <TouchableOpacity 
+            style={[
+              styles.addButton,
+              !newItem.trim() && styles.addButtonDisabled
+            ]} 
+            onPress={handleAddItem}
+            disabled={!newItem.trim()}
+          >
+            <Plus size={24} color={newItem.trim() ? colors.white : 'rgba(255,255,255,0.5)'} />
           </TouchableOpacity>
         </View>
         
@@ -162,7 +181,12 @@ export default function ShoppingListScreen() {
             <>
               <View style={styles.completedHeader}>
                 <Text style={styles.sectionTitle}>Purchased Items ({completedItems.length})</Text>
-                <TouchableOpacity onPress={clearCompletedItems}>
+                <TouchableOpacity 
+                  onPress={() => {
+                    clearCompletedItems();
+                    Alert.alert('Success', 'Completed items cleared!');
+                  }}
+                >
                   <Text style={styles.clearText}>Clear</Text>
                 </TouchableOpacity>
               </View>
@@ -250,10 +274,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 12,
   },
+  addButtonDisabled: {
+    backgroundColor: colors.gray || '#cccccc',
+  },
   successMessage: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.successLight,
+    backgroundColor: colors.successLight || '#e6f7e6',
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,

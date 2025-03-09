@@ -1,11 +1,21 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MealPlan } from '@/types/recipe';
+
+export type WeekDay = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export interface MealPlanItem {
+  id: string;
+  day: WeekDay;
+  mealType: MealType;
+  recipeId: string;
+}
 
 interface MealPlanState {
-  mealPlan: MealPlan;
+  mealPlan: Record<string, Record<string, string>>;
   recipeUsage: Record<string, { count: number, lastUsed: string }>;
+  mealPlanItems: MealPlanItem[];
   addMeal: (day: string, mealType: string, recipeId: string) => void;
   removeMeal: (day: string, mealType: string) => void;
   clearMealPlan: () => void;
@@ -13,11 +23,17 @@ interface MealPlanState {
   getLastUsedDate: (recipeId: string) => string | null;
 }
 
+// Helper to generate a unique ID
+const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+};
+
 export const useMealPlanStore = create<MealPlanState>()(
   persist(
     (set, get) => ({
       mealPlan: {},
       recipeUsage: {},
+      mealPlanItems: [], // Initialize as empty array
       
       addMeal: (day: string, mealType: string, recipeId: string) => {
         set((state) => {
@@ -39,37 +55,81 @@ export const useMealPlanStore = create<MealPlanState>()(
             lastUsed: new Date().toISOString()
           };
           
+          // Update meal plan items
+          const newMealPlanItems = Array.isArray(state.mealPlanItems) ? [...state.mealPlanItems] : [];
+          
+          // Remove existing item for this day/mealType if it exists
+          const existingItemIndex = newMealPlanItems.findIndex(
+            item => item && item.day === day && item.mealType === mealType
+          );
+          
+          if (existingItemIndex !== -1) {
+            newMealPlanItems.splice(existingItemIndex, 1);
+          }
+          
+          // Add new item
+          newMealPlanItems.push({
+            id: generateId(),
+            day: day as WeekDay,
+            mealType: mealType as MealType,
+            recipeId
+          });
+          
           return {
             mealPlan: newMealPlan,
-            recipeUsage: newRecipeUsage
+            recipeUsage: newRecipeUsage,
+            mealPlanItems: newMealPlanItems
           };
         });
       },
       
       removeMeal: (day: string, mealType: string) => {
         set((state) => {
-          if (!state.mealPlan[day] || !state.mealPlan[day][mealType]) {
-            return state;
-          }
-          
+          // Create a copy of the current state
           const newMealPlan = { ...state.mealPlan };
-          delete newMealPlan[day][mealType];
+          const newMealPlanItems = Array.isArray(state.mealPlanItems) ? [...state.mealPlanItems] : [];
           
-          // If day is empty, remove it
-          if (Object.keys(newMealPlan[day]).length === 0) {
-            delete newMealPlan[day];
+          // Check if the day exists in the meal plan
+          if (newMealPlan[day]) {
+            // Check if the meal type exists for this day
+            if (newMealPlan[day][mealType]) {
+              // Remove the meal type from this day
+              delete newMealPlan[day][mealType];
+              
+              // If day is empty, remove it
+              if (Object.keys(newMealPlan[day]).length === 0) {
+                delete newMealPlan[day];
+              }
+            }
           }
           
-          return { mealPlan: newMealPlan };
+          // Filter out the removed meal from mealPlanItems
+          const filteredItems = newMealPlanItems.filter(
+            item => item && !(item.day === day && item.mealType === mealType)
+          );
+          
+          return { 
+            ...state,
+            mealPlan: newMealPlan,
+            mealPlanItems: filteredItems
+          };
         });
       },
       
       clearMealPlan: () => {
-        set({ mealPlan: {} });
+        set({ 
+          mealPlan: {},
+          mealPlanItems: []
+        });
       },
       
       getRecommendedRecipes: (count: number) => {
         const { recipeUsage } = get();
+        
+        // If no recipe usage data, return empty array
+        if (!recipeUsage || Object.keys(recipeUsage).length === 0) {
+          return [];
+        }
         
         // Sort recipes by usage count (descending) and then by last used date (oldest first)
         const sortedRecipes = Object.entries(recipeUsage)
@@ -89,12 +149,14 @@ export const useMealPlanStore = create<MealPlanState>()(
       
       getLastUsedDate: (recipeId: string) => {
         const { recipeUsage } = get();
-        return recipeUsage[recipeId]?.lastUsed || null;
+        return recipeUsage && recipeUsage[recipeId] ? recipeUsage[recipeId].lastUsed : null;
       }
     }),
     {
       name: 'meal-plan-storage',
-      storage: createJSONStorage(() => AsyncStorage)
+      storage: createJSONStorage(() => AsyncStorage),
+      // Add version and migration logic if needed in the future
+      version: 1,
     }
   )
 );

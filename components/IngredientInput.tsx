@@ -131,8 +131,15 @@ export const IngredientInput = ({
           )}
         </View>
         
-        <TouchableOpacity style={styles.addButton} onPress={handleAddItem}>
-          <Plus size={20} color={colors.white} />
+        <TouchableOpacity 
+          style={[
+            styles.addButton,
+            !inputValue.trim() && styles.addButtonDisabled
+          ]} 
+          onPress={handleAddItem}
+          disabled={!inputValue.trim()}
+        >
+          <Plus size={20} color={inputValue.trim() ? colors.white : 'rgba(255,255,255,0.5)'} />
         </TouchableOpacity>
       </View>
       
@@ -300,6 +307,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
+  },
+  addButtonDisabled: {
+    backgroundColor: colors.gray || '#cccccc',
   },
   errorText: {
     color: colors.error,

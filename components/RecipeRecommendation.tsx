@@ -19,7 +19,7 @@ export const RecipeRecommendation = ({
   onSelectRecipe,
   emptyMessage = 'No recipes to show'
 }: RecipeRecommendationProps) => {
-  const { getRecipeUsageCount } = useMealPlanStore();
+  const { getLastUsedDate } = useMealPlanStore();
   
   const recipes = recipeIds
     .map(id => getRecipeById(id))
@@ -28,6 +28,12 @@ export const RecipeRecommendation = ({
   if (recipes.length === 0) {
     return null;
   }
+  
+  // Get usage count safely
+  const getRecipeUsageCount = (recipeId: string) => {
+    const lastUsedDate = getLastUsedDate(recipeId);
+    return lastUsedDate ? 1 : 0; // Simple count based on if it was used
+  };
   
   return (
     <View style={styles.container}>

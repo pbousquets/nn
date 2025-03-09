@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { colors } from '@/constants/colors';
 import { MealPlanItem, MealType, WeekDay } from '@/hooks/use-meal-plan-store';
 import { getRecipeById } from '@/mocks/recipes';
-import { Plus } from 'lucide-react-native';
+import { Plus, X } from 'lucide-react-native';
 
 interface MealPlanDayProps {
   day: WeekDay;
@@ -11,6 +11,7 @@ interface MealPlanDayProps {
   mealPlanItems: MealPlanItem[];
   onAddMeal: (mealType: MealType) => void;
   onPressItem: (item: MealPlanItem) => void;
+  onRemoveMeal: (day: WeekDay, mealType: MealType) => void;
   enabledMealTypes: MealType[];
 }
 
@@ -33,11 +34,15 @@ const formatDate = (dateString: string): string => {
 export const MealPlanDay = ({ 
   day, 
   date, 
-  mealPlanItems, 
+  mealPlanItems = [], // Provide default empty array
   onAddMeal,
   onPressItem,
-  enabledMealTypes
+  onRemoveMeal,
+  enabledMealTypes = [] // Provide default empty array
 }: MealPlanDayProps) => {
+  // Ensure mealPlanItems is an array
+  const items = Array.isArray(mealPlanItems) ? mealPlanItems : [];
+  
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -48,8 +53,11 @@ export const MealPlanDay = ({
       </View>
       
       <View style={styles.mealsContainer}>
-        {MEAL_TYPES.filter(meal => enabledMealTypes.includes(meal.type)).map(({ type, label }) => {
-          const mealItems = mealPlanItems.filter(item => item.mealType === type);
+        {MEAL_TYPES.filter(meal => 
+          Array.isArray(enabledMealTypes) && enabledMealTypes.includes(meal.type)
+        ).map(({ type, label }) => {
+          // Safely filter items
+          const mealItems = items.filter(item => item && item.mealType === type);
           
           return (
             <View key={type} style={styles.mealSection}>
@@ -62,15 +70,22 @@ export const MealPlanDay = ({
                   if (!recipe) return null;
                   
                   return (
-                    <TouchableOpacity 
-                      key={item.id} 
-                      style={styles.mealItem}
-                      onPress={() => onPressItem(item)}
-                    >
-                      <Text style={styles.mealItemText} numberOfLines={1}>
-                        {recipe.title}
-                      </Text>
-                    </TouchableOpacity>
+                    <View key={item.id} style={styles.mealItemContainer}>
+                      <TouchableOpacity 
+                        style={styles.mealItem}
+                        onPress={() => onPressItem(item)}
+                      >
+                        <Text style={styles.mealItemText} numberOfLines={1}>
+                          {recipe.title}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.removeButton}
+                        onPress={() => onRemoveMeal(day, type)}
+                      >
+                        <X size={16} color={colors.error} />
+                      </TouchableOpacity>
+                    </View>
                   );
                 })
               ) : (
@@ -131,15 +146,24 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
   },
+  mealItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   mealItem: {
+    flex: 1,
     backgroundColor: colors.grayLight,
     borderRadius: 8,
     padding: 12,
-    marginBottom: 8,
   },
   mealItemText: {
     fontSize: 14,
     color: colors.text,
+  },
+  removeButton: {
+    padding: 8,
+    marginLeft: 8,
   },
   addMealButton: {
     flexDirection: 'row',

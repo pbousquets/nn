@@ -20,7 +20,8 @@ import {
   Coffee,
   Utensils,
   Soup,
-  Moon
+  Moon,
+  Plus
 } from 'lucide-react-native';
 
 export default function ProfileScreen() {
@@ -36,6 +37,8 @@ export default function ProfileScreen() {
   const { isEnabled: chaosMode, toggle: toggleChaosMode } = useChaosModeStore();
   
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [showSignInSuccess, setShowSignInSuccess] = useState(false);
+  const [showSignOutSuccess, setShowSignOutSuccess] = useState(false);
   
   const userRecipes = getUserRecipes();
   const shoppingListItems = items.length;
@@ -51,7 +54,12 @@ export default function ProfileScreen() {
         },
         {
           text: 'Sign In',
-          onPress: () => setIsSignedIn(true),
+          onPress: () => {
+            setIsSignedIn(true);
+            setShowSignInSuccess(true);
+            setTimeout(() => setShowSignInSuccess(false), 3000);
+            Alert.alert('Success', 'You are now signed in as John Doe');
+          },
         },
       ]
     );
@@ -68,10 +76,20 @@ export default function ProfileScreen() {
         },
         {
           text: 'Sign Out',
-          onPress: () => setIsSignedIn(false),
+          style: 'destructive',
+          onPress: () => {
+            setIsSignedIn(false);
+            setShowSignOutSuccess(true);
+            setTimeout(() => setShowSignOutSuccess(false), 3000);
+            Alert.alert('Success', 'You have been signed out');
+          },
         },
       ]
     );
+  };
+  
+  const navigateToCreateRecipe = () => {
+    router.push('/recipe/create');
   };
   
   return (
@@ -88,6 +106,18 @@ export default function ProfileScreen() {
           <Text style={styles.username}>
             {isSignedIn ? 'John Doe' : 'Guest User'}
           </Text>
+          
+          {showSignInSuccess && (
+            <View style={styles.successMessage}>
+              <Text style={styles.successText}>Successfully signed in!</Text>
+            </View>
+          )}
+          
+          {showSignOutSuccess && (
+            <View style={styles.successMessage}>
+              <Text style={styles.successText}>Successfully signed out!</Text>
+            </View>
+          )}
           
           <TouchableOpacity 
             style={styles.authButton}
@@ -113,46 +143,50 @@ export default function ProfileScreen() {
           </View>
         </View>
         
-        <View style={styles.quickActions}>
-          <TouchableOpacity 
-            style={styles.quickAction}
-            onPress={() => router.push('/my-recipes')}
-          >
-            <View style={[styles.quickActionIcon, { backgroundColor: colors.primary }]}>
-              <BookOpen size={20} color={colors.white} />
-            </View>
-            <Text style={styles.quickActionText}>My Recipes</Text>
-          </TouchableOpacity>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
           
-          <TouchableOpacity 
-            style={styles.quickAction}
-            onPress={() => router.push('/favorites')}
-          >
-            <View style={[styles.quickActionIcon, { backgroundColor: colors.secondary }]}>
-              <Heart size={20} color={colors.white} />
-            </View>
-            <Text style={styles.quickActionText}>Favorites</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.quickAction}
-            onPress={() => router.push('/shopping-list')}
-          >
-            <View style={[styles.quickActionIcon, { backgroundColor: colors.tertiary }]}>
-              <ShoppingBag size={20} color={colors.white} />
-            </View>
-            <Text style={styles.quickActionText}>Shopping List</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.quickAction}
-            onPress={() => router.push('/meal-plan')}
-          >
-            <View style={[styles.quickActionIcon, { backgroundColor: colors.quaternary }]}>
-              <Calendar size={20} color={colors.white} />
-            </View>
-            <Text style={styles.quickActionText}>Meal Plan</Text>
-          </TouchableOpacity>
+          <View style={styles.quickActions}>
+            <TouchableOpacity 
+              style={styles.quickAction}
+              onPress={navigateToCreateRecipe}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: colors.primary }]}>
+                <Plus size={20} color={colors.white} />
+              </View>
+              <Text style={styles.quickActionText}>New Recipe</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.quickAction}
+              onPress={() => router.push('/shopping-list')}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: colors.secondary }]}>
+                <ShoppingBag size={20} color={colors.white} />
+              </View>
+              <Text style={styles.quickActionText}>Shopping</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.quickAction}
+              onPress={() => router.push('/meal-plan')}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: colors.tertiary || colors.primary }]}>
+                <Calendar size={20} color={colors.white} />
+              </View>
+              <Text style={styles.quickActionText}>Meal Plan</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.quickAction}
+              onPress={() => router.push('/favorites')}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: colors.quaternary || colors.secondary }]}>
+                <Heart size={20} color={colors.white} />
+              </View>
+              <Text style={styles.quickActionText}>Favorites</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         
         <View style={styles.section}>
@@ -166,8 +200,8 @@ export default function ProfileScreen() {
             <Switch
               value={enabledMealTypes.includes('breakfast')}
               onValueChange={() => toggleMealType('breakfast')}
-              trackColor={{ false: colors.grayLight, true: colors.primaryLight }}
-              thumbColor={enabledMealTypes.includes('breakfast') ? colors.primary : colors.gray}
+              trackColor={{ false: colors.grayLight, true: colors.primaryLight || '#e6f7e6' }}
+              thumbColor={enabledMealTypes.includes('breakfast') ? colors.primary : colors.gray || '#cccccc'}
             />
           </View>
           
@@ -179,8 +213,8 @@ export default function ProfileScreen() {
             <Switch
               value={enabledMealTypes.includes('lunch')}
               onValueChange={() => toggleMealType('lunch')}
-              trackColor={{ false: colors.grayLight, true: colors.primaryLight }}
-              thumbColor={enabledMealTypes.includes('lunch') ? colors.primary : colors.gray}
+              trackColor={{ false: colors.grayLight, true: colors.primaryLight || '#e6f7e6' }}
+              thumbColor={enabledMealTypes.includes('lunch') ? colors.primary : colors.gray || '#cccccc'}
             />
           </View>
           
@@ -192,8 +226,8 @@ export default function ProfileScreen() {
             <Switch
               value={enabledMealTypes.includes('dinner')}
               onValueChange={() => toggleMealType('dinner')}
-              trackColor={{ false: colors.grayLight, true: colors.primaryLight }}
-              thumbColor={enabledMealTypes.includes('dinner') ? colors.primary : colors.gray}
+              trackColor={{ false: colors.grayLight, true: colors.primaryLight || '#e6f7e6' }}
+              thumbColor={enabledMealTypes.includes('dinner') ? colors.primary : colors.gray || '#cccccc'}
             />
           </View>
         </View>
@@ -209,8 +243,8 @@ export default function ProfileScreen() {
             <Switch
               value={showRecipeImages}
               onValueChange={toggleShowRecipeImages}
-              trackColor={{ false: colors.grayLight, true: colors.primaryLight }}
-              thumbColor={showRecipeImages ? colors.primary : colors.gray}
+              trackColor={{ false: colors.grayLight, true: colors.primaryLight || '#e6f7e6' }}
+              thumbColor={showRecipeImages ? colors.primary : colors.gray || '#cccccc'}
             />
           </View>
           
@@ -233,8 +267,8 @@ export default function ProfileScreen() {
             <Switch
               value={chaosMode}
               onValueChange={toggleChaosMode}
-              trackColor={{ false: colors.grayLight, true: colors.primaryLight }}
-              thumbColor={chaosMode ? colors.primary : colors.gray}
+              trackColor={{ false: colors.grayLight, true: colors.primaryLight || '#e6f7e6' }}
+              thumbColor={chaosMode ? colors.primary : colors.gray || '#cccccc'}
             />
           </View>
           
@@ -285,6 +319,16 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
   },
+  successMessage: {
+    backgroundColor: colors.successLight || '#e6f7e6',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  successText: {
+    color: colors.success,
+    fontWeight: '500',
+  },
   authButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -320,12 +364,21 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: colors.border,
   },
-  quickActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  section: {
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 16,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   quickAction: {
     width: '25%',
@@ -344,17 +397,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text,
     textAlign: 'center',
-  },
-  section: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 16,
   },
   settingItem: {
     flexDirection: 'row',

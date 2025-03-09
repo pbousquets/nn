@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -7,14 +7,15 @@ import { Image } from 'expo-image';
 import { colors } from '@/constants/colors';
 import { getRecipeById } from '@/mocks/recipes';
 import { useRecipeStore } from '@/hooks/use-recipe-store';
-import { NutritionInfo } from '@/components/NutritionInfo';
-import { Heart, Clock, Users, ChefHat, ArrowLeft, Share2, Edit } from 'lucide-react-native';
+import { useShoppingListStore } from '@/hooks/use-shopping-list-store';
+import { Heart, Clock, Users, ChefHat, ArrowLeft, Share2, Edit, ShoppingBag } from 'lucide-react-native';
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const recipe = getRecipeById(id);
   const { addToRecentlyViewed, isFavorite, addToFavorites, removeFromFavorites, getUserRecipeById } = useRecipeStore();
+  const { addItems } = useShoppingListStore();
   
   // Check if this is a user-created recipe
   const isUserRecipe = !!getUserRecipeById(id);
@@ -50,6 +51,37 @@ export default function RecipeDetailScreen() {
   const handleEditRecipe = () => {
     router.push(`/recipe/edit/${recipe.id}`);
   };
+  
+  const handleAddToShoppingList = () => {
+    // Extract ingredient names from the recipe
+    const ingredientNames = recipe.ingredients.map(ingredient => {
+      if (typeof ingredient === 'string') {
+        return ingredient;
+      } else if (ingredient.name) {
+        const amount = ingredient.amount ? `${ingredient.amount} ${ingredient.unit || ''} ` : '';
+        return `${amount}${ingredient.name}`;
+      }
+      return '';
+    }).filter(name => name !== '');
+    
+    // Add ingredients to shopping list
+    addItems(ingredientNames);
+    
+    Alert.alert(
+      'Added to Shopping List',
+      `${ingredientNames.length} ingredients have been added to your shopping list.`,
+      [
+        {
+          text: 'View List',
+          onPress: () => router.push('/shopping-list')
+        },
+        {
+          text: 'OK',
+          style: 'cancel'
+        }
+      ]
+    );
+  };
 
   return (
     <>
@@ -84,6 +116,13 @@ export default function RecipeDetailScreen() {
                     <Edit size={24} color={colors.white} />
                   </TouchableOpacity>
                 )}
+                
+                <TouchableOpacity 
+                  style={styles.iconButton}
+                  onPress={handleAddToShoppingList}
+                >
+                  <ShoppingBag size={24} color={colors.white} />
+                </TouchableOpacity>
                 
                 <TouchableOpacity style={styles.iconButton}>
                   <Share2 size={24} color={colors.white} />
@@ -134,21 +173,25 @@ export default function RecipeDetailScreen() {
             </View>
           </View>
           
-          <NutritionInfo
-            calories={recipe.calories}
-            protein={recipe.protein}
-            carbs={recipe.carbs}
-            fat={recipe.fat}
-          />
-          
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Ingredients</Text>
-            {recipe.ingredients.map((ingredient, index) => (
-              <View key={index} style={styles.ingredientItem}>
-                <View style={styles.bullet} />
-                <Text style={styles.ingredientText}>{ingredient}</Text>
-              </View>
-            ))}
+            {recipe.ingredients.map((ingredient, index) => {
+              let displayText = '';
+              
+              if (typeof ingredient === 'string') {
+                displayText = ingredient;
+              } else if (ingredient.name) {
+                const amount = ingredient.amount ? `${ingredient.amount} ${ingredient.unit || ''} ` : '';
+                displayText = `${amount}${ingredient.name}`;
+              }
+              
+              return (
+                <View key={index} style={styles.ingredientItem}>
+                  <View style={styles.bullet} />
+                  <Text style={styles.ingredientText}>{displayText}</Text>
+                </View>
+              );
+            })}
           </View>
           
           <View style={styles.section}>

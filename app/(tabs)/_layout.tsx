@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Home, Search, Heart, User, Calendar, Plus, ShoppingBag } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
-import { TouchableOpacity, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, StyleSheet, View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 
 export default function TabLayout() {
@@ -36,15 +36,27 @@ export default function TabLayout() {
           <View style={styles.headerButtons}>
             <TouchableOpacity 
               style={styles.headerButton}
-              onPress={() => router.push('/shopping-list')}
+              onPress={() => {
+                router.push('/shopping-list');
+              }}
+              accessibilityLabel="Shopping List"
             >
-              <ShoppingBag size={22} color={colors.text} />
+              <View style={styles.iconBadge}>
+                <ShoppingBag size={22} color={colors.text} />
+              </View>
+              <Text style={styles.iconLabel}>Shopping</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerButton}
-              onPress={() => router.push('/recipe/create')}
+              onPress={() => {
+                router.push('/recipe/create');
+              }}
+              accessibilityLabel="Create Recipe"
             >
-              <Plus size={22} color={colors.text} />
+              <View style={styles.iconBadge}>
+                <Plus size={22} color={colors.text} />
+              </View>
+              <Text style={styles.iconLabel}>Create</Text>
             </TouchableOpacity>
           </View>
         ),
@@ -96,5 +108,16 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     marginLeft: 16,
+    alignItems: 'center',
+  },
+  iconBadge: {
+    backgroundColor: colors.grayLight,
+    borderRadius: 20,
+    padding: 8,
+    marginBottom: 2,
+  },
+  iconLabel: {
+    fontSize: 10,
+    color: colors.text,
   },
 });

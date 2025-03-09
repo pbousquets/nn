@@ -13,13 +13,13 @@ import { Button } from '@/components/Button';
 import { useRecipeStore } from '@/hooks/use-recipe-store';
 import { categories } from '@/mocks/categories';
 import { Recipe, Ingredient } from '@/types/recipe';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Check } from 'lucide-react-native';
 
 // Convert categories to options for select input
-const categoryOptions = categories.map(category => ({
+const categoryOptions = categories ? categories.map(category => ({
   label: category.name,
   value: category.name,
-}));
+})) : [];
 
 // Difficulty options
 const difficultyOptions = [
@@ -34,6 +34,7 @@ export default function EditRecipeScreen() {
   const { updateUserRecipe, getUserRecipeById, deleteUserRecipe } = useRecipeStore();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   
   // Get the recipe to edit
   const recipe = getUserRecipeById(id);
@@ -50,9 +51,9 @@ export default function EditRecipeScreen() {
   const [title, setTitle] = useState(recipe?.title || '');
   const [description, setDescription] = useState(recipe?.description || '');
   const [category, setCategory] = useState(recipe?.category || '');
-  const [prepTime, setPrepTime] = useState(recipe?.prepTime.toString() || '');
-  const [cookTime, setCookTime] = useState(recipe?.cookTime.toString() || '');
-  const [servings, setServings] = useState(recipe?.servings.toString() || '');
+  const [prepTime, setPrepTime] = useState(recipe?.prepTime?.toString() || '');
+  const [cookTime, setCookTime] = useState(recipe?.cookTime?.toString() || '');
+  const [servings, setServings] = useState(recipe?.servings?.toString() || '');
   const [difficulty, setDifficulty] = useState(recipe?.difficulty || 'Easy');
   const [ingredients, setIngredients] = useState<Ingredient[]>(recipe?.ingredients || []);
   const [instructions, setInstructions] = useState<string[]>(recipe?.instructions || []);
@@ -94,7 +95,10 @@ export default function EditRecipeScreen() {
   };
   
   const handleSubmit = () => {
-    if (!validateForm() || !recipe) return;
+    if (!validateForm() || !recipe) {
+      Alert.alert('Error', 'Please fix the errors in the form before submitting.');
+      return;
+    }
     
     setLoading(true);
     
@@ -114,6 +118,10 @@ export default function EditRecipeScreen() {
       };
       
       updateUserRecipe(updatedRecipe);
+      
+      // Show success message
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 2000);
       
       Alert.alert(
         'Success',
@@ -197,6 +205,13 @@ export default function EditRecipeScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.content}>
+            {success && (
+              <View style={styles.successMessage}>
+                <Check size={16} color={colors.success} />
+                <Text style={styles.successText}>Recipe updated successfully!</Text>
+              </View>
+            )}
+            
             <Text style={styles.sectionTitle}>Basic Information</Text>
             
             <FormInput
@@ -302,6 +317,7 @@ export default function EditRecipeScreen() {
                 onPress={handleSubmit}
                 loading={loading}
                 style={styles.updateButton}
+                disabled={loading}
               />
               
               <Button
@@ -310,6 +326,7 @@ export default function EditRecipeScreen() {
                 variant="outline"
                 loading={deleteLoading}
                 style={styles.deleteButton}
+                disabled={deleteLoading}
               />
             </View>
           </View>
@@ -333,6 +350,19 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 32,
+  },
+  successMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.successLight || '#e6f7e6',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  successText: {
+    color: colors.success,
+    marginLeft: 8,
+    fontWeight: '500',
   },
   sectionTitle: {
     fontSize: 18,

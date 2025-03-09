@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Modal, FlatList, Platform } from 'react-native';
 import { colors } from '@/constants/colors';
-import { ChevronDown, Check } from 'lucide-react-native';
+import { ChevronDown } from 'lucide-react-native';
 
-interface SelectOption {
+interface Option {
   label: string;
   value: string;
 }
 
 interface SelectInputProps {
   label: string;
-  options: SelectOption[];
+  options: Option[];
   value: string;
   onValueChange: (value: string) => void;
   placeholder?: string;
@@ -22,25 +22,37 @@ export const SelectInput = ({
   options, 
   value, 
   onValueChange, 
-  placeholder = 'Select an option', 
-  error 
+  placeholder = 'Select an option',
+  error
 }: SelectInputProps) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [webDropdownVisible, setWebDropdownVisible] = useState(false);
   
   const selectedOption = options.find(option => option.value === value);
-
+  
+  const handleSelect = (selectedValue: string) => {
+    onValueChange(selectedValue);
+    setModalVisible(false);
+    setWebDropdownVisible(false);
+  };
+  
+  const toggleDropdown = () => {
+    if (Platform.OS === 'web') {
+      setWebDropdownVisible(!webDropdownVisible);
+    } else {
+      setModalVisible(true);
+    }
+  };
+  
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       
       <TouchableOpacity 
-        style={[styles.selectContainer, error ? styles.selectError : null]} 
-        onPress={() => setModalVisible(true)}
+        style={[styles.selectButton, error && styles.selectButtonError]} 
+        onPress={toggleDropdown}
       >
-        <Text style={[
-          styles.selectText, 
-          !selectedOption && styles.placeholderText
-        ]}>
+        <Text style={selectedOption ? styles.selectedText : styles.placeholderText}>
           {selectedOption ? selectedOption.label : placeholder}
         </Text>
         <ChevronDown size={20} color={colors.textLight} />
@@ -72,16 +84,20 @@ export const SelectInput = ({
                 keyExtractor={(item) => item.value}
                 renderItem={({ item }) => (
                   <TouchableOpacity 
-                    style={styles.optionItem} 
-                    onPress={() => {
-                      onValueChange(item.value);
-                      setModalVisible(false);
-                    }}
+                    style={[
+                      styles.optionItem,
+                      item.value === value && styles.selectedOptionItem
+                    ]} 
+                    onPress={() => handleSelect(item.value)}
                   >
-                    <Text style={styles.optionText}>{item.label}</Text>
-                    {item.value === value && (
-                      <Check size={20} color={colors.primary} />
-                    )}
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        item.value === value && styles.selectedOptionText
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
                   </TouchableOpacity>
                 )}
               />
@@ -89,26 +105,25 @@ export const SelectInput = ({
           </View>
         </Modal>
       ) : (
-        modalVisible && (
+        webDropdownVisible && (
           <View style={styles.webDropdown}>
-            {options.map((item) => (
+            {options.map((option) => (
               <TouchableOpacity 
-                key={item.value}
-                style={styles.webOptionItem} 
-                onPress={() => {
-                  onValueChange(item.value);
-                  setModalVisible(false);
-                }}
+                key={option.value}
+                style={[
+                  styles.webOptionItem,
+                  option.value === value && styles.selectedOptionItem
+                ]} 
+                onPress={() => handleSelect(option.value)}
               >
-                <Text style={[
-                  styles.optionText,
-                  item.value === value && styles.webSelectedOption
-                ]}>
-                  {item.label}
+                <Text 
+                  style={[
+                    styles.optionText,
+                    option.value === value && styles.selectedOptionText
+                  ]}
+                >
+                  {option.label}
                 </Text>
-                {item.value === value && (
-                  <Check size={16} color={colors.primary} />
-                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -122,7 +137,6 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 16,
     position: 'relative',
-    zIndex: 100, // Ensure dropdown appears above other elements
   },
   label: {
     fontSize: 16,
@@ -130,26 +144,27 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
   },
-  selectContainer: {
+  selectButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: colors.grayLight,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  selectText: {
+  selectButtonError: {
+    borderColor: colors.error,
+  },
+  selectedText: {
     fontSize: 16,
     color: colors.text,
   },
   placeholderText: {
+    fontSize: 16,
     color: colors.textLight,
-  },
-  selectError: {
-    borderColor: colors.error,
   },
   errorText: {
     color: colors.error,
@@ -166,7 +181,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 20,
-    maxHeight: '80%',
+    maxHeight: '50%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -190,18 +205,21 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   optionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  selectedOptionItem: {
+    backgroundColor: colors.primaryLight || '#e6f7e6',
   },
   optionText: {
     fontSize: 16,
     color: colors.text,
   },
-  // Web specific styles
+  selectedOptionText: {
+    fontWeight: '600',
+    color: colors.primary,
+  },
   webDropdown: {
     position: 'absolute',
     top: '100%',
@@ -221,15 +239,8 @@ const styles = StyleSheet.create({
     overflow: 'auto',
   },
   webOptionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-  },
-  webSelectedOption: {
-    fontWeight: '600',
-    color: colors.primary,
   },
 });

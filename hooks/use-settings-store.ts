@@ -1,22 +1,35 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-type MealType = 'breakfast' | 'lunch' | 'dinner';
+import { MealType } from './use-meal-plan-store';
 
 interface SettingsState {
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
+  notificationsEnabled: boolean;
+  toggleNotifications: () => void;
   enabledMealTypes: MealType[];
-  showRecipeImages: boolean;
   toggleMealType: (mealType: MealType) => void;
-  toggleShowRecipeImages: () => void;
+  showRecipeImages: boolean;
+  toggleRecipeImages: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
+      isDarkMode: false,
+      notificationsEnabled: true,
       // Default to lunch and dinner enabled
       enabledMealTypes: ['lunch', 'dinner'],
       showRecipeImages: true,
+      
+      toggleDarkMode: () => set((state) => ({ 
+        isDarkMode: !state.isDarkMode 
+      })),
+      
+      toggleNotifications: () => set((state) => ({ 
+        notificationsEnabled: !state.notificationsEnabled 
+      })),
       
       toggleMealType: (mealType: MealType) => {
         set((state) => {
@@ -36,7 +49,7 @@ export const useSettingsStore = create<SettingsState>()(
         });
       },
       
-      toggleShowRecipeImages: () => {
+      toggleRecipeImages: () => {
         set((state) => ({
           showRecipeImages: !state.showRecipeImages
         }));

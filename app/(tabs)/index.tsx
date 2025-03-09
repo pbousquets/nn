@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { recipes } from '@/mocks/recipes';
+import { categories } from '@/mocks/categories';
 import { CategoryCard } from '@/components/CategoryCard';
 import { RecipeCard } from '@/components/RecipeCard';
 import { colors } from '@/constants/colors';
@@ -16,7 +17,6 @@ import { SecretTapArea } from '@/components/SecretTapArea';
 import { useChaosModeStore } from '@/hooks/use-chaos-mode';
 import { ChaosMealPlan } from '@/components/ChaosMealPlan';
 import { ChaosButton } from '@/components/ChaosButton';
-import { categories } from '@/mocks/categories';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -118,7 +118,7 @@ export default function HomeScreen() {
             style={styles.quickActionButton}
             onPress={navigateToMyRecipes}
           >
-            <View style={[styles.quickActionIcon, { backgroundColor: colors.tertiary }]}>
+            <View style={[styles.quickActionIcon, { backgroundColor: colors.tertiary || colors.primary }]}>
               <BookOpen size={24} color={colors.white} />
             </View>
             <Text style={styles.quickActionText}>My Recipes</Text>
@@ -231,15 +231,18 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoriesContainer}
           >
-            {/* Only show first 4 categories */}
-            {[0, 1, 2, 3].map((index) => (
-              <View key={index} style={styles.horizontalCategoryItem}>
-                <CategoryCard
-                  category={recipes.filter(r => r.category === categories[index].name)[0] ? categories[index] : categories[0]}
-                  onPress={() => navigateToCategory(categories[index].id)}
-                />
-              </View>
-            ))}
+            {categories && categories.length > 0 ? (
+              categories.slice(0, 4).map((category) => (
+                <View key={category.id} style={styles.horizontalCategoryItem}>
+                  <CategoryCard
+                    category={category}
+                    onPress={() => navigateToCategory(category.id)}
+                  />
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyText}>No categories available</Text>
+            )}
           </ScrollView>
         </View>
 
@@ -313,7 +316,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 24,
     padding: 16,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.primaryLight || '#e6f7e6',
     borderRadius: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -399,5 +402,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.primary,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: colors.textLight,
+    textAlign: 'center',
+    padding: 20,
   },
 });
